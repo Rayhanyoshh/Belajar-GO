@@ -1,0 +1,82 @@
+basePath: /
+definitions:
+  handlers.AddWebsiteInput:
+    properties:
+      url:
+        example: https://google.com
+        type: string
+    type: object
+  models.Website:
+    properties:
+      id:
+        type: integer
+      url:
+        type: string
+    type: object
+  models.WebsiteStatus:
+    properties:
+      status:
+        description: '"UP" atau "DOWN"'
+        type: string
+      url:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Sistem Pemantau Status Website Berbasis Goroutines
+  title: GoTracker API
+  version: "1.0"
+paths:
+  /check:
+    post:
+      description: Memicu pengecekan status UP/DOWN secara paralel menggunakan Goroutines.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.WebsiteStatus'
+            type: array
+      summary: Cek status semua website (Manual Trigger)
+      tags:
+      - Monitor
+  /websites:
+    get:
+      description: Mendapatkan semua URL website yang sedang dipantau oleh sistem.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Website'
+            type: array
+      summary: Mengambil daftar website
+      tags:
+      - Websites
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan URL baru ke dalam database untuk dipantau secara otomatis.
+      parameters:
+      - description: Data URL yang ingin dipantau
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddWebsiteInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Website'
+      summary: Mendaftarkan website baru
+      tags:
+      - Websites
+swagger: "2.0"

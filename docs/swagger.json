@@ -1,0 +1,125 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Sistem Pemantau Status Website Berbasis Goroutines",
+        "title": "GoTracker API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/check": {
+            "post": {
+                "description": "Memicu pengecekan status UP/DOWN secara paralel menggunakan Goroutines.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Monitor"
+                ],
+                "summary": "Cek status semua website (Manual Trigger)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.WebsiteStatus"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/websites": {
+            "get": {
+                "description": "Mendapatkan semua URL website yang sedang dipantau oleh sistem.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Websites"
+                ],
+                "summary": "Mengambil daftar website",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Website"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Menambahkan URL baru ke dalam database untuk dipantau secara otomatis.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Websites"
+                ],
+                "summary": "Mendaftarkan website baru",
+                "parameters": [
+                    {
+                        "description": "Data URL yang ingin dipantau",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AddWebsiteInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Website"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handlers.AddWebsiteInput": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "example": "https://google.com"
+                }
+            }
+        },
+        "models.Website": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.WebsiteStatus": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "\"UP\" atau \"DOWN\"",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
