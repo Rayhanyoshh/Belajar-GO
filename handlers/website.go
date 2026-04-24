@@ -3,8 +3,9 @@ package handlers
 import (
 	"belajar-go/database"
 	"belajar-go/models"
-	"encoding/json"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetWebsites godoc
@@ -14,10 +15,10 @@ import (
 // @Produce      json
 // @Success      200  {array}   models.Website
 // @Router       /websites [get]
-func GetWebsites(w http.ResponseWriter, r *http.Request) {
+func GetWebsites(c *gin.Context) {
 	rows, err := database.DB.Query("SELECT id, url FROM websites")
 	if err != nil {
-		http.Error(w, "Gagal mengambil data dari database", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data dari database"})
 		return
 	}
 	defer rows.Close()
@@ -35,8 +36,7 @@ func GetWebsites(w http.ResponseWriter, r *http.Request) {
 		websites = []models.Website{}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(websites)
+	c.JSON(http.StatusOK, websites)
 }
 
 // Struct tambahan khusus untuk memberi tahu dokumentasi wujud input JSON-nya
@@ -53,11 +53,11 @@ type AddWebsiteInput struct {
 // @Param        request body AddWebsiteInput true "Data URL yang ingin dipantau"
 // @Success      201  {object}  models.Website
 // @Router       /websites [post]
-func AddWebsite(w http.ResponseWriter, r *http.Request) {
+func AddWebsite(c *gin.Context) {
 	var input AddWebsiteInput
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Format JSON salah", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format JSON salah"})
 		return
 	}
 
@@ -68,7 +68,7 @@ func AddWebsite(w http.ResponseWriter, r *http.Request) {
 	).Scan(&newID)
 
 	if err != nil {
-		http.Error(w, "Gagal menyimpan ke database (mungkin URL sudah ada)", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan ke database (mungkin URL sudah ada)"})
 		return
 	}
 
@@ -77,7 +77,5 @@ func AddWebsite(w http.ResponseWriter, r *http.Request) {
 		URL: input.URL,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newWeb)
+	c.JSON(http.StatusCreated, newWeb)
 }

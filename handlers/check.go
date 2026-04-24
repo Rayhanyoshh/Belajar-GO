@@ -3,10 +3,11 @@ package handlers
 import (
 	"belajar-go/database"
 	"belajar-go/models"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CheckWebsites godoc
@@ -16,10 +17,10 @@ import (
 // @Produce      json
 // @Success      200  {array}   models.WebsiteStatus
 // @Router       /check [post]
-func CheckWebsites(w http.ResponseWriter, r *http.Request) {
+func CheckWebsites(c *gin.Context) {
 	rows, err := database.DB.Query("SELECT id, url FROM websites")
 	if err != nil {
-		http.Error(w, "Gagal mengambil data", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data"})
 		return
 	}
 	defer rows.Close()
@@ -33,7 +34,7 @@ func CheckWebsites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(websites) == 0 {
-		http.Error(w, "Belum ada website yang didaftarkan.", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Belum ada website yang didaftarkan."})
 		return
 	}
 
@@ -74,6 +75,5 @@ func CheckWebsites(w http.ResponseWriter, r *http.Request) {
 		checkResults = append(checkResults, res)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(checkResults)
+	c.JSON(http.StatusOK, checkResults)
 }
