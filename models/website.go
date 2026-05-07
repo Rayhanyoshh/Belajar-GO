@@ -8,6 +8,13 @@ type Website struct {
 }
 
 type WebsiteStatus struct {
-	URL    string `json:"url"`
-	Status string `json:"status"` // "UP" atau "DOWN"
+	URL            string `json:"url"`
+	Status         string `json:"status"` // "UP" atau "DOWN"
+	ResponseTimeMs int64  `json:"response_time_ms"`
+}
+
+type CheckHistory struct {
+	CheckedAt      string `json:"checked_at"`
+	Status         string `json:"status"`
+	ResponseTimeMs *int64 `json:"response_time_ms"` // Pointer agar bisa handle null dari data lama
 }

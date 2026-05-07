@@ -3,9 +3,10 @@ package handlers
 import (
 	"belajar-go/database"
 	"belajar-go/models"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,21 +48,24 @@ func CheckWebsites(c *gin.Context) {
 		go func(targetWeb models.Website) {
 			defer wg.Done()
 			
+			start := time.Now()
 			resp, httpErr := http.Get(targetWeb.URL)
+			latency := time.Since(start).Milliseconds()
+
 			status := "UP"
 			if httpErr != nil || resp.StatusCode >= 400 {
 				status = "DOWN"
 			}
 
 			_, dbErr := database.DB.Exec(
-				"INSERT INTO checks (website_id, status) VALUES ($1, $2)",
-				targetWeb.ID, status,
+				"INSERT INTO checks (website_id, status, response_time_ms) VALUES ($1, $2, $3)",
+				targetWeb.ID, status, latency,
 			)
 			if dbErr != nil {
-				fmt.Println("[Worker Error] Gagal mencatat log untuk", targetWeb.URL)
+				slog.Error("Gagal mencatat log", "url", targetWeb.URL, "error", dbErr, "source", "manual_check")
 			}
 
-			resultsChan <- models.WebsiteStatus{URL: targetWeb.URL, Status: status}
+			resultsChan <- models.WebsiteStatus{URL: targetWeb.URL, Status: status, ResponseTimeMs: latency}
 		}(web)
 	}
 

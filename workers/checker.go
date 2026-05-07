@@ -3,7 +3,7 @@ package workers
 import (
 	"belajar-go/database"
 	"belajar-go/models"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -20,7 +20,7 @@ func StartBackgroundChecker() {
 	go func() {
 		// Looping tak terbatas yang akan ter-trigger setiap kali ticker berdetak
 		for range ticker.C {
-			fmt.Println("\n⏳ [Background Worker] Memulai pengecekan otomatis...")
+			slog.Info("Memulai pengecekan otomatis", "source", "background_worker")
 			runCheck()
 		}
 	}()
@@ -30,7 +30,7 @@ func StartBackgroundChecker() {
 func runCheck() {
 	rows, err := database.DB.Query("SELECT id, url FROM websites")
 	if err != nil {
-		fmt.Println("[Worker Error] Gagal mengambil data dari database:", err)
+		slog.Error("Gagal mengambil data dari database", "error", err, "source", "background_worker")
 		return
 	}
 	defer rows.Close()
@@ -55,7 +55,10 @@ func runCheck() {
 		go func(targetWeb models.Website) {
 			defer wg.Done()
 			
+			start := time.Now()
 			resp, httpErr := http.Get(targetWeb.URL)
+			latency := time.Since(start).Milliseconds()
+
 			status := "UP"
 			if httpErr != nil || resp.StatusCode >= 400 {
 				status = "DOWN"
@@ -63,14 +66,13 @@ func runCheck() {
 
 			// Simpan hasil ke database
 			_, dbErr := database.DB.Exec(
-				"INSERT INTO checks (website_id, status) VALUES ($1, $2)",
-				targetWeb.ID, status,
+				"INSERT INTO checks (website_id, status, response_time_ms) VALUES ($1, $2, $3)",
+				targetWeb.ID, status, latency,
 			)
 			if dbErr != nil {
-				fmt.Println("[Worker Error] Gagal mencatat log untuk", targetWeb.URL)
+				slog.Error("Gagal mencatat log", "url", targetWeb.URL, "error", dbErr, "source", "background_worker")
 			} else {
-				// Print ke terminal agar kita tahu robotnya sedang bekerja
-				fmt.Printf("✅ [Worker] %s -> %s\n", targetWeb.URL, status)
+				slog.Info("Check selesai", "url", targetWeb.URL, "status", status, "latency_ms", latency, "source", "background_worker")
 			}
 		}(web)
 	}

@@ -1,16 +1,26 @@
 package middlewares
 
 import (
-	"strings"
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Rahasia ini HARUS SAMA PERSIS dengan rahasia yang ada di Microservice SSO!
-// Jika berbeda, Tracker akan menganggap token dari SSO itu palsu.
-var JWTSecretKey = []byte("KUNCI_RAHASIA_SUPER_KUAT_123")
+// JWTSecretKey dibaca dari environment variable JWT_SECRET.
+// HARUS SAMA dengan yang dipakai di Belajar-SSO agar token dari SSO bisa divalidasi di sini.
+var JWTSecretKey = mustGetJWTSecret()
+
+func mustGetJWTSecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		panic(fmt.Sprintf("[FATAL] Environment variable JWT_SECRET tidak di-set! Server tidak dapat berjalan."))
+	}
+	return []byte(secret)
+}
 
 // AuthMiddleware adalah "Satpam" yang menjaga rute API kita
 func AuthMiddleware() gin.HandlerFunc {
