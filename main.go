@@ -82,8 +82,14 @@ func main() {
 	slog.Info("Server Tracker mulai berjalan", "port", "8080")
 	slog.Info("Dokumentasi API tersedia di /swagger/index.html")
 	
+	// Mendukung port dinamis untuk deployment
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: r,
 	}
 
